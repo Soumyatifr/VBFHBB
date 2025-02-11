@@ -1,0 +1,26 @@
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 CRAB Client version: v3.241125
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 Running on: Linux lxplus910.cern.ch 5.14.0-503.15.1.el9_5.x86_64 #1 SMP PREEMPT_DYNAMIC Thu Nov 14 15:45:31 EST 2024 x86_64 x86_64 x86_64 GNU/Linux
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 Not using Singularity
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 Operating System: Red Hat Enterprise Linux 9.5 (Plow)
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 Executing command: 'submit'
+DEBUG 2025-02-07 21:19:54.741 UTC: 	 Found CRAB cache file /afs/cern.ch/user/m/mukherje/.crab3
+INFO 2025-02-07 21:19:54.742 UTC: 	 Will use CRAB configuration file crabfile_VBFHBB_2022preEE_VBFHto2B_M-125_dipoleRecoilOn_TuneCP5_13p6TeV_powheg-pythia8.py
+DEBUG 2025-02-07 21:19:54.742 UTC: 	 Loading CRAB configuration file.
+DEBUG 2025-02-07 21:19:54.758 UTC: 	 Will use CRAB plugin ANALYSIS (i.e. will run an analysis job type).
+ERROR 2025-02-07 21:19:54.758 UTC: 	 Working area '/afs/cern.ch/work/m/mukherje/private/RUN3/VBFHBB/Analysis/CMSSW_14_0_9/src/VBFHBB/Analysis/test/crabworkarea_2022preEE/crab_crab_VBFHBB_2022preEE_GluGluHto2B_M-125_TuneCP5_13p6TeV_powheg-minlo-pythia8' already exists 
+Please change the requestName in the config file
+ERROR 2025-02-07 21:19:54.758 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.241125.00/bin/crab.py", line 157, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.241125.00/bin/crab.py", line 135, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])  # the crab command to be executed
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.241125.00/lib/CRABClient/Commands/submit.py", line 37, in __init__
+    SubCommand.__init__(self, logger, cmdargs, disable_interspersed_args=True)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.241125.00/lib/CRABClient/Commands/SubCommand.py", line 328, in __init__
+    self.requestarea, self.requestname, self.logfile = createWorkArea(
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.241125.00/lib/CRABClient/ClientUtilities.py", line 392, in createWorkArea
+    raise ConfigException("Working area '%s' already exists \nPlease change the requestName in the config file" % fullpath)
+CRABClient.ClientExceptions.ConfigException: Working area '/afs/cern.ch/work/m/mukherje/private/RUN3/VBFHBB/Analysis/CMSSW_14_0_9/src/VBFHBB/Analysis/test/crabworkarea_2022preEE/crab_crab_VBFHBB_2022preEE_GluGluHto2B_M-125_TuneCP5_13p6TeV_powheg-minlo-pythia8' already exists 
+Please change the requestName in the config file
+INFO 2025-02-07 21:19:54.760 UTC: 	 Log file is /afs/cern.ch/work/m/mukherje/private/RUN3/VBFHBB/Analysis/CMSSW_14_0_9/src/VBFHBB/Analysis/test/crab.log
