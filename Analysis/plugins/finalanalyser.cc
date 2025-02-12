@@ -341,25 +341,28 @@ finalanalyser::finalanalyser(const edm::ParameterSet& iConfig)
    edm::Service<TFileService> fs;
    m_tree = fs->make<TTree>("tree", "");
    m_tree2 = fs->make<TTree>("allEvt", "");
-   if(is_MC_ && is_signal_)
+   if(is_MC_ )
    {
       m_tree2 -> Branch ("nPU", &nPU);
       m_tree2 -> Branch ("weight", & _genWeight);
       m_tree2 -> Branch ("nPV", &nPV);
-      m_tree2->Branch("wgt_isr_up", &wgt_isr_up, "wgt_isr_up/F");
-      m_tree2->Branch("wgt_isr_dn", &wgt_isr_dn, "wgt_isr_dn/F");
-      m_tree2->Branch("wgt_fsr_up", &wgt_fsr_up, "wgt_fsr_up/F");
-      m_tree2->Branch("wgt_fsr_dn", &wgt_fsr_dn, "wgt_fsr_dn/F");
-      //Total weight QCDscale
-      m_tree2->Branch("wgt_scl_0", &wgt_scl_0, "wgt_scl_0/F");
-      m_tree2->Branch("wgt_scl_1", &wgt_scl_1, "wgt_scl_1/F");
-      m_tree2->Branch("wgt_scl_2", &wgt_scl_2, "wgt_scl_2/F");
-      m_tree2->Branch("wgt_scl_3", &wgt_scl_3, "wgt_scl_3/F");
-      m_tree2->Branch("wgt_scl_4", &wgt_scl_4, "wgt_scl_4/F");
-      m_tree2->Branch("wgt_scl_5", &wgt_scl_5, "wgt_scl_5/F");
-      m_tree2->Branch("wgt_scl_6", &wgt_scl_6, "wgt_scl_6/F");
-      m_tree2->Branch("wgt_scl_7", &wgt_scl_7, "wgt_scl_7/F");
-      m_tree2->Branch("wgt_scl_8", &wgt_scl_8, "wgt_scl_8/F");
+      if(is_signal_)
+      {
+	      m_tree2->Branch("wgt_isr_up", &wgt_isr_up, "wgt_isr_up/F");
+	      m_tree2->Branch("wgt_isr_dn", &wgt_isr_dn, "wgt_isr_dn/F");
+	      m_tree2->Branch("wgt_fsr_up", &wgt_fsr_up, "wgt_fsr_up/F");
+	      m_tree2->Branch("wgt_fsr_dn", &wgt_fsr_dn, "wgt_fsr_dn/F");
+	      //Total weight QCDscale
+	      m_tree2->Branch("wgt_scl_0", &wgt_scl_0, "wgt_scl_0/F");
+	      m_tree2->Branch("wgt_scl_1", &wgt_scl_1, "wgt_scl_1/F");
+	      m_tree2->Branch("wgt_scl_2", &wgt_scl_2, "wgt_scl_2/F");
+	      m_tree2->Branch("wgt_scl_3", &wgt_scl_3, "wgt_scl_3/F");
+	      m_tree2->Branch("wgt_scl_4", &wgt_scl_4, "wgt_scl_4/F");
+	      m_tree2->Branch("wgt_scl_5", &wgt_scl_5, "wgt_scl_5/F");
+	      m_tree2->Branch("wgt_scl_6", &wgt_scl_6, "wgt_scl_6/F");
+	      m_tree2->Branch("wgt_scl_7", &wgt_scl_7, "wgt_scl_7/F");
+	      m_tree2->Branch("wgt_scl_8", &wgt_scl_8, "wgt_scl_8/F");
+      }
    }
    //*****************************************************//
    m_tree -> Branch ("nPU", &nPU);

@@ -21,6 +21,38 @@
 #include <map>
 using namespace std;
 using correction::CorrectionSet;
+
+float get_QCD_cor(TFile *file_SF, float pt, int pdgId, int choice = 1, float pt_min=100)
+{
+	// choice = 2-> taking cor from dark matter paper
+	// choice = 1-> taking cor from CMS NLO samples
+	// any other option-> taking cor from UHH files
+
+	if(choice==0) { pt_min = 150; }
+
+	char name[100];
+
+	if(choice==1) { sprintf(name,"kFactor"); }
+	else if(choice==2) {
+		if      (pdgId==23){ sprintf(name,"kFactor"); }
+		else if (pdgId==24){ sprintf(name,"kFactor"); }
+		else { sprintf(name,"kfactor"); }
+	}
+	else { sprintf(name,"kfactor"); }
+
+	//cout<<name<<endl;
+
+	TH1F *h_qcd = (TH1F*)file_SF->Get(name);
+	float cor = 1;
+	if(pt>=pt_min){
+		int pt_bin_id = h_qcd->GetXaxis()->FindBin(pt);
+		cor = h_qcd->GetBinContent(pt_bin_id);
+	}
+
+	return cor;
+
+}
+
 double rew[100]= { 1.0,1.0,1.012,1.0152,1.0805,1.0043,1.0021,1.0098,2.8052,1.58579,0.940009,0.590456,0.357289,0.228586,0.178971,0.179546,0.204174,0.23343,0.256832,0.270224,0.28062,0.293677,0.320289,0.370999,0.439896,0.508875,0.562734,0.59917,0.625077,0.646724,0.663765,0.680047,0.692118,0.703977,0.716711,0.732862,0.756295,0.791354,0.837351,0.900965,0.981485,1.07731,1.18672,1.30742,1.42727,1.54666,1.65179,1.73941,1.80448,1.84491,1.85677,1.84475,1.81642,1.76972,1.72028,1.66507,1.62295,1.597,1.59949,1.62128,1.70122,1.80899,2.00402,2.25853,2.67455,3.26791,4.05272,5.32682,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0,1.0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 
@@ -235,6 +267,14 @@ void Produce_Final_Var_Jer_Forveto()
         cset->validate();
         auto cset_sf = cset->at("particleNet_shape");
 
+	//***************************************************************************************//
+        //                                     V-pT reweighting                                  //
+        //***************************************************************************************//
+        TFile *ZJets_cor_file;
+        TFile *WJets_cor_file;
+        ZJets_cor_file = new TFile("VJets_Cor/Z_Gen_pT_kFactor_NLOvsLO_13p6TeV.root","read");
+        WJets_cor_file = new TFile("VJets_Cor/W_Gen_pT_kFactor_NLOvsLO_13p6TeV.root","read");
+
         map<string,pair<double,double>> Processes
         {
            #include "Info_Map/Map.txt"
@@ -272,6 +312,7 @@ void Produce_Final_Var_Jer_Forveto()
         Float_t T_qglq1;
 	Float_t T_qglq2;
 	Float_t T_HLTweight;
+	Float_t T_V_pTweight;
         Float_t T_xsec;
 	Float_t T_sumwgt;
 	// Event weight
@@ -282,6 +323,7 @@ void Produce_Final_Var_Jer_Forveto()
         Var_Tree->Branch("T_PUweight",                       &T_PUweight,                   "T_PUweight/F");
         Var_Tree->Branch("T_btag_weight_central",            &T_btag_weight_central,        "T_btag_weight_central/F");
         Var_Tree->Branch("T_HLTweight",                      &T_HLTweight,                  "T_HLTweight/F");
+        Var_Tree->Branch("T_V_pTweight",                     &T_V_pTweight,                 "T_V_pTweight/F");
 
         // Leading Jets
   	Var_Tree->Branch("T_pt0",               &T_pt0,           "T_pt0/F");
@@ -388,6 +430,8 @@ void Produce_Final_Var_Jer_Forveto()
         Bool_t          Flag_eeBadScFilter;
         Bool_t          Flag_ecalBadCalibFilter_;
         Bool_t          event_veto_map;
+	vector<double>  *gen_V_pt;
+	vector<int>     *gen_V_pdgid;
         Int_t           njet;
 	vector<double>  jet_Jerpt;
         vector<double>  jet_Jereta;
@@ -471,6 +515,8 @@ void Produce_Final_Var_Jer_Forveto()
         TBranch        *b_Flag_hfNoisyHitsFilter;   //!
         TBranch        *b_Flag_eeBadScFilter;   //!
         TBranch        *b_Flag_ecalBadCalibFilter_;   //!
+	TBranch        *b_gen_V_pt;
+	TBranch        *b_gen_V_pdgid;
         TBranch        *b_njet;   //!
         TBranch        *b_jet_pt;   //!
         TBranch        *b_jet_eta;   //!
@@ -521,8 +567,6 @@ void Produce_Final_Var_Jer_Forveto()
         TBranch        *b_L3jet_eta;   //!
         TBranch        *b_L3jet_phi;   //!
         TBranch        *b_L3jet_en;   //!
-
-
         TBranch        *b_MET_pt;   //!
         TBranch        *b_MET_phi;   //!
         TBranch        *b_HLT_PF60;   //!
@@ -582,6 +626,8 @@ void Produce_Final_Var_Jer_Forveto()
    L3jet_eta = 0;
    L3jet_phi = 0;
    L3jet_en = 0;
+   gen_V_pdgid = 0,
+   gen_V_pt = 0;
         mtree->SetBranchAddress("nPU", &nPU, &b_nPU);
 	//if(kk==0)
 	//{
@@ -601,6 +647,12 @@ void Produce_Final_Var_Jer_Forveto()
         mtree->SetBranchAddress("Flag_hfNoisyHitsFilter", &Flag_hfNoisyHitsFilter, &b_Flag_hfNoisyHitsFilter);
         mtree->SetBranchAddress("Flag_eeBadScFilter", &Flag_eeBadScFilter, &b_Flag_eeBadScFilter);
         mtree->SetBranchAddress("Flag_ecalBadCalibFilter_", &Flag_ecalBadCalibFilter_, &b_Flag_ecalBadCalibFilter_);
+
+	if (((TString)Proc.first).Contains("Zto2Q") || ((TString)Proc.first).Contains("WJets"))
+	{
+	  mtree->SetBranchAddress("gen_V_pt", &gen_V_pt);
+	  mtree->SetBranchAddress("gen_V_pdgid", &gen_V_pdgid);
+	}
         mtree->SetBranchAddress("njet", &njet, &b_njet);
         mtree->SetBranchAddress("jet_pt", &jet_pt, &b_jet_pt);
         mtree->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
@@ -652,27 +704,15 @@ void Produce_Final_Var_Jer_Forveto()
         mtree->SetBranchAddress("L3jet_en", &L3jet_en, &b_L3jet_en);
         mtree->SetBranchAddress("MET_pt", &MET_pt, &b_MET_pt);
         mtree->SetBranchAddress("MET_phi", &MET_phi, &b_MET_phi);
-    //    mtree->SetBranchAddress("HLT_PF60", &HLT_PF60, &b_HLT_PF60);
-  //      mtree->SetBranchAddress("HLT_PF80", &HLT_PF80, &b_HLT_PF80);
-	//mtree->SetBranchAddress("jet_pnet_jec", &jet_pnet_jec, &b_jet_pnet_jec);
-//	mtree->SetBranchAddress("jet_pnet_ptcorr", &jet_pnet_ptcorr, &b_jet_pnet_ptcorr);
-//	mtree->SetBranchAddress("jet_pnet_ptnu", &jet_pnet_ptnu, &b_jet_pnet_ptnu);
-//	mtree->SetBranchAddress("jet_pnet_ptres", &jet_pnet_ptres, &b_jet_pnet_ptres);
 
         mtree->SetBranchAddress("HLT_QuadPFJet103_88_75_15", &HLT_QuadPFJet103_88_75_15, &b_HLT_QuadPFJet103_88_75_15);
         mtree->SetBranchAddress("L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5", &L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5, &b_L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5);
 	mtree->SetBranchAddress("HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1", &HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1, &b_HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1);
 	mtree->SetBranchAddress("HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2", &HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2, &b_HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2);
-//	mtree->SetBranchAddress("HLT_QuadPFJet103_88_76_15", &HLT_QuadPFJet103_88_76_15, &b_HLT_QuadPFJet103_88_76_15);
 	mtree->SetBranchAddress("HLT_QuadPFJet105_88_76_15_DoublePFBTagDeepJet_1p3_7p7_VBF1", &HLT_QuadPFJet105_88_76_15_DoublePFBTagDeepJet_1p3_7p7_VBF1, &b_HLT_QuadPFJet105_88_76_15_DoublePFBTagDeepJet_1p3_7p7_VBF1);
 	mtree->SetBranchAddress("HLT_QuadPFJet105_88_76_15_PFBTagDeepJet_1p3_VBF2", &HLT_QuadPFJet105_88_76_15_PFBTagDeepJet_1p3_VBF2, &b_HLT_QuadPFJet105_88_76_15_PFBTagDeepJet_1p3_VBF2);
-     //   HLT_QuadPFJet105_88_76_15;			
-        //Bool_t        HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1;
-       // Bool_t        HLT_QuadPFJet103_88_75_15_PFBTagDeepJet_1p3_VBF2;
-        //Bool_t        HLT_QuadPFJet105_88_76_15_DoublePFBTagDeepJet_1p3_7p7_VBF1;
-	//
-        //Bool_t        HLT_QuadPFJet105_88_76_15_PFBTagDeepJet_1p3_VBF2;
         Long64_t nn; 
+
 	// if there var used to set the branch value is not initialised properly u will get problem here
 	nn = mtree->GetEntries();
 	
@@ -681,6 +721,30 @@ void Produce_Final_Var_Jer_Forveto()
           {     mtree->GetEntry(j);
 		T_xsec = (double)Proc.second.first;
 		T_sumwgt = (double)Proc.second.second;
+                
+	        //***************************************************************************************//
+                //                                     V-pT reweighting                                  //
+                //***************************************************************************************//
+                T_V_pTweight = 1;
+                if (((TString)Proc.first).Contains("Zto2Q")) 
+		{		   
+		   if(gen_V_pt->size() > 0)
+		   {	 
+		     Float_t GenV_pt = gen_V_pt->at(0);	
+		     Float_t GenV_pdgId = fabs(gen_V_pdgid->at(0));
+                     T_V_pTweight = get_QCD_cor(ZJets_cor_file,GenV_pt,GenV_pdgId,1);
+		   }
+		}
+                if (((TString)Proc.first).Contains("WJets"))
+                {
+		  if(gen_V_pt->size() > 0)     
+                  {	
+		    Float_t GenV_pt = gen_V_pt->at(0) ; 
+                    Float_t GenV_pdgId = fabs(gen_V_pdgid->at(0));	
+                    T_V_pTweight = get_QCD_cor(WJets_cor_file,GenV_pt,GenV_pdgId,1);      
+		  }
+                }
+
 		jet_Jerpt.clear();
                 jet_Jereta.clear();
                 jet_Jerphi.clear();
@@ -1226,9 +1290,9 @@ void Produce_Final_Var_Jer_Forveto()
     f->Write();
     h->Write();
     f->Close();
-
-	}//Kk_Proc loop
-
+    }//Kk_Proc loop
+ZJets_cor_file->Close();
+WJets_cor_file->Close();
 }//End
 
 
